@@ -1,66 +1,50 @@
-package Server;
+package server;
+
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class Server {
-    private static List<PrintWriter> clientOutputStreams;
-
     public static void main(String[] args) {
-        clientOutputStreams = new ArrayList<>();
+
+        int corePoolSize = 10;
+        int maximumPoolSize = 20;
+        long keepAliveTime = 60L;
+        TimeUnit unit = TimeUnit.SECONDS;
+        BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<>(50); // queue with a capacity of 50
+        
+        ThreadPoolExecutor executorService = new ThreadPoolExecutor(
+            corePoolSize,
+            maximumPoolSize,
+            keepAliveTime,
+            unit,
+            workQueue
+        );
 
         try {
+            // Create a server socket
             ServerSocket serverSocket = new ServerSocket(1234);
-            System.out.println("Server started on port 1234.");
+            System.out.println("Server started. Waiting for clients to connect...");
 
             while (true) {
+                // Accept client connections
                 Socket clientSocket = serverSocket.accept();
-                PrintWriter writer = new PrintWriter(clientSocket.getOutputStream());
-                clientOutputStreams.add(writer);
+                System.out.println("Client connected: " + clientSocket.getInetAddress().getHostAddress());
 
-                Thread clientThread = new Thread(new ClientHandler(clientSocket));
-                clientThread.start();
+                // Create a new thread to handle the client
+                ClientHandler clientHandler = new ClientHandler(clientSocket);
+                executorService.execute(clientHandler);
+                // clientHandler.start();
             }
-        } catch (IOException e) {
+        } catch (RejectedExecutionException e) {
+            System.out.println("Task submission rejected. " + e.getMessage());
+         catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    public static void broadcastMessage(String message) {
-        for (PrintWriter writer : clientOutputStreams) {
-            writer.println(message);
-            writer.flush();
-        }
-    }
-
-    private static class ClientHandler implements Runnable {
-        private Socket clientSocket;
-        private Scanner reader;
-
-        public ClientHandler(Socket clientSocket) {
-            this.clientSocket = clientSocket;
-        }
-
-        @Override
-        public void run() {
-            try {
-                reader = new Scanner(clientSocket.getInputStream());
-
-                while (reader.hasNextLine()) {
-                    String message = reader.nextLine();
-                    broadcastMessage(message);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                if (reader != null) {
-                    reader.close();
-                }
-            }
         }
     }
 }
