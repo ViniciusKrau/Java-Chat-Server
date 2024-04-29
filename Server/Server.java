@@ -43,7 +43,8 @@ public class Server {
             }
         } catch (RejectedExecutionException e) {
             System.out.println("Task submission rejected. " + e.getMessage());
-         catch (IOException e) {
+            throw e;
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
