@@ -30,6 +30,18 @@
       <version>1.18.20</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>5.8.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>5.8.1</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   <repositories>
     <repository>
@@ -55,7 +67,7 @@
     </pluginRepository>
   </pluginRepositories>
   <build>
-    <sourceDirectory>d:\Codes\Java-Chat-Server\src\main\java</sourceDirectory>
+    <sourceDirectory>d:\Codes\Java-Chat-Server\src</sourceDirectory>
     <scriptSourceDirectory>d:\Codes\Java-Chat-Server\src\main\scripts</scriptSourceDirectory>
     <testSourceDirectory>d:\Codes\Java-Chat-Server\src\test\java</testSourceDirectory>
     <outputDirectory>d:\Codes\Java-Chat-Server\target\classes</outputDirectory>

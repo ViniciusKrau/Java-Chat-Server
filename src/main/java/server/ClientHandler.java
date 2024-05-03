@@ -7,15 +7,18 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
+import javax.crypto.SecretKey;
 
 
 public class ClientHandler extends Thread {
     private Socket clientSocket;
     private BufferedReader reader;
     private PrintWriter writer;
+    private SecretKey secretKey;
 
-    public ClientHandler(Socket clientSocket) {
+    public ClientHandler(Socket clientSocket, SecretKey secretKey) {
         this.clientSocket = clientSocket;
+        this.secretKey = secretKey;
     }
 
     public void run() {
