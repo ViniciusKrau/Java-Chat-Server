@@ -1,6 +1,7 @@
 package server;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.BlockingQueue;
@@ -28,7 +29,8 @@ public class Server {
 
         try {
             // Create a server socket
-            ServerSocket serverSocket = new ServerSocket(1234);
+            InetAddress localhost = InetAddress.getByName("127.0.0.1");
+            ServerSocket serverSocket = new ServerSocket(1234, 50, localhost);
             System.out.println("Server started. Waiting for clients to connect...");
 
             while (true) {
