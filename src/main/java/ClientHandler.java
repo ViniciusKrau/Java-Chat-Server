@@ -1,4 +1,4 @@
-package server;
+
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -33,6 +33,7 @@ public class ClientHandler extends Thread {
         } finally {
             try {
                 // Close the client socket
+                Server.clients.remove(this);
                 clientSocket.close();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -41,7 +42,10 @@ public class ClientHandler extends Thread {
     }
 
     private void broadcastMessage(String message) {
-        // TODO: Implement the logic to send the message to all connected clients
-        // You can maintain a list of connected clients and iterate through them to send the message
+        for (ClientHandler client : Server.clients) {
+            if (client != this) { // don't send the message to the sender
+                client.writer.println(message);
+            }
+        }
     }
 }

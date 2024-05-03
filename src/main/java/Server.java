@@ -1,9 +1,11 @@
-package server;
+
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
@@ -11,6 +13,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class Server {
+
+    public static List<ClientHandler> clients = new ArrayList<>();
     public static void main(String[] args) {
 
         int corePoolSize = 10;
@@ -40,6 +44,7 @@ public class Server {
 
                 // Create a new thread to handle the client
                 ClientHandler clientHandler = new ClientHandler(clientSocket);
+                Server.clients.add(clientHandler);
                 executorService.execute(clientHandler);
                 // clientHandler.start();
             }
