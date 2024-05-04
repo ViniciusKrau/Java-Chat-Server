@@ -8,16 +8,17 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -27,16 +28,19 @@ import java.util.concurrent.TimeUnit;
 
 public class Server {
 
-    public static List<ClientHandler> clients = new ArrayList<>();
+    public static List<ClientHandler> clients = Collections.synchronizedList(new ArrayList<>());
     private static ServerSocket serverSocket;
     private static ThreadPoolExecutor executorService;
     static PrivateKey serverPrivateKey;
     static PublicKey serverPublicKey;
     private static KeyPairGenerator keyPairGenerator;
     
-    
+    public void serverInit(){
+
+    }  
 
     public static void main(String[] args) {
+        
 
         try {
             Server.keyPairGenerator = KeyPairGenerator.getInstance("RSA");
@@ -83,19 +87,18 @@ public class Server {
                // Read the key from the client
                 BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                 String publicKeyStringClient = in.readLine();
-                X509EncodedKeySpec spec = new X509EncodedKeySpec(Base64.getDecoder().decode(publicKeyStringClient));
+                X509EncodedKeySpec spec = new X509EncodedKeySpec(Base64.getDecoder().decode(publicKeyStringClient.getBytes()));
                 KeyFactory keyFactory = KeyFactory.getInstance("RSA");
                 PublicKey clientPublicKey = keyFactory.generatePublic(spec);
-                // System.out.println(clientPublicKey.toString());
-                
-                // Thread.sleep(5000);
+                // System.out.println(clientPublicKey);
+            
                 System.out.println("Sending server public key to client");
                 PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
                 out.println(Base64.getEncoder().encodeToString(serverPublicKey.getEncoded()));
 
                 // Create a new thread to handle the client
-                ClientHandler clientHandler = new ClientHandler(clientSocket, clientPublicKey, in, out);
-                Server.clients.add(clientHandler);
+                ClientHandler clientHandler = new ClientHandler(clientSocket, clientPublicKey);
+                clients.add(clientHandler);
                 executorService.execute(clientHandler);
 
                 // for(ClientHandler client : Server.clients) {
@@ -107,12 +110,16 @@ public class Server {
         } catch (RejectedExecutionException e) {
             System.out.println("Task submission rejected. " + e.getMessage());
             throw e;
-        } catch (Exception e) {
+        } catch (SocketException e) {
+            e.printStackTrace();
+            restartServer();
+        }
+        catch (Exception e) {
             e.printStackTrace();
         } finally {
             closeServer();
         }
-    }
+    }   
 
     public static void closeServer() {
         try {
@@ -131,5 +138,9 @@ public class Server {
     public static void restartServer() {
         closeServer();
         main(null);
+    }
+
+    public static List<ClientHandler> getClients() {
+        return clients;
     }
 }

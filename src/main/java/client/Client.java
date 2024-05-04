@@ -18,6 +18,7 @@ import java.util.Base64;
 import javax.crypto.Cipher;
 
 
+
 public class Client {
 
     private static final String SERVER_ADDRESS = "localhost";
@@ -60,12 +61,11 @@ public class Client {
 
             // Receive the server's public key
             String publicKeyString = read.readLine();
-            byte[] publicKeyBytes = Base64.getDecoder().decode(publicKeyString);
+            byte[] publicKeyBytes = Base64.getDecoder().decode(publicKeyString.getBytes());
+            
             X509EncodedKeySpec spec = new X509EncodedKeySpec(publicKeyBytes);
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA"); // or "DSA", "EC", etc.
-
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             serverPublicKey = keyFactory.generatePublic(spec);
-            System.out.println(Base64.getEncoder().encodeToString(publicKey.getEncoded()));
 
 
 
@@ -74,6 +74,7 @@ public class Client {
                 try {
                     String message;
                     while ((message = read.readLine()) != null) {
+                        // System.out.println("Encrypted message: " + message);
                         System.out.println("Received message: " + decryptMessage(message));
                     }
                 } catch (IOException e) {
@@ -99,9 +100,8 @@ public class Client {
     private static String encryptMessage(String message) {
         try {
             Cipher cipher = Cipher.getInstance("RSA");
-            cipher.init(Cipher.ENCRYPT_MODE, serverPublicKey);
+            cipher.init(Cipher.ENCRYPT_MODE, serverPublicKey); 
             byte[] encryptedBytes = cipher.doFinal(message.getBytes("UTF-8"));
-            System.out.println(decryptMessage(Base64.getEncoder().encodeToString(encryptedBytes)));
             return Base64.getEncoder().encodeToString(encryptedBytes);
         } catch (Exception e) {
             throw new RuntimeException("Error encrypting message", e);
@@ -112,8 +112,10 @@ public class Client {
         try {
             Cipher cipher = Cipher.getInstance("RSA");
             cipher.init(Cipher.DECRYPT_MODE, privateKey);
-            byte[] decryptedBytes = cipher.doFinal(encryptedMessage.getBytes());
-            return new String(decryptedBytes);
+            byte[] encryptedBytes = Base64.getDecoder().decode(encryptedMessage);
+            byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
+            String decryptedMessage = new String(decryptedBytes);
+            return decryptedMessage;
         } catch (Exception e) {
             throw new RuntimeException("Error decrypting message", e);
         }
