@@ -16,11 +16,10 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -28,16 +27,12 @@ import java.util.concurrent.TimeUnit;
 
 public class Server {
 
-    public static List<ClientHandler> clients = Collections.synchronizedList(new ArrayList<>());
+    static CopyOnWriteArrayList<ClientHandler> clients = new CopyOnWriteArrayList<>();
     private static ServerSocket serverSocket;
     private static ThreadPoolExecutor executorService;
     static PrivateKey serverPrivateKey;
     static PublicKey serverPublicKey;
     private static KeyPairGenerator keyPairGenerator;
-    
-    public void serverInit(){
-
-    }  
 
     public static void main(String[] args) {
         
@@ -100,10 +95,6 @@ public class Server {
                 ClientHandler clientHandler = new ClientHandler(clientSocket, clientPublicKey);
                 clients.add(clientHandler);
                 executorService.execute(clientHandler);
-
-                // for(ClientHandler client : Server.clients) {
-                //     System.out.println(Base64.getEncoder().encodeToString(client.getPublicKey().getEncoded()));
-                // }
             }
 
 
@@ -111,13 +102,10 @@ public class Server {
             System.out.println("Task submission rejected. " + e.getMessage());
             throw e;
         } catch (SocketException e) {
-            e.printStackTrace();
-            restartServer();
+            // restartServer();
         }
         catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            closeServer();
         }
     }   
 

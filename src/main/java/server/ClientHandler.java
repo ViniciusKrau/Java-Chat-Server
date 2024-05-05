@@ -7,7 +7,9 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.security.PublicKey;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 
 import javax.crypto.Cipher;
 
@@ -35,19 +37,26 @@ public class ClientHandler extends Thread {
     public void run() {
         String inputLine;
         try {
-            while ((inputLine = reader.readLine()) != null) {
+            while (clientSocket.isConnected() && !clientSocket.isClosed() && (inputLine = reader.readLine()) != null) {
                 // Broadcast the received message to all connected clients
                 String decryptedMessage = decryptMessage(inputLine);
-                broadcastMessage(decryptedMessage);
+                if(decryptedMessage != null){
+                    if(decryptedMessage.equals("Restart")){
+                        System.out.println("Restarting server...");
+                        Server.restartServer();
+                    }
+                    broadcastMessage(decryptedMessage);
+                }
             }
+
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
             try {
                 // Close the client socket
                 Server.clients.remove(this);
+                System.out.println("Client disconnected: " + clientSocket.getInetAddress().getHostAddress());
                 clientSocket.close();
-            } catch (IOException e) {
+            } catch (IOException ex) {
                 e.printStackTrace();
             }
         }
@@ -59,7 +68,6 @@ public class ClientHandler extends Thread {
             Cipher cipher = Cipher.getInstance("RSA");
             cipher.init(Cipher.ENCRYPT_MODE, publicKey);
             byte[] encryptedBytes = cipher.doFinal(message.getBytes("UTF-8"));
-            // System.out.println("Encrypted message: " + Base64.getEncoder().encodeToString(encryptedBytes));
             return Base64.getEncoder().encodeToString(encryptedBytes);
         } catch (Exception e) {
             throw new RuntimeException("Error encrypting message", e);
@@ -73,7 +81,6 @@ public class ClientHandler extends Thread {
             byte[] encryptedBytes = Base64.getDecoder().decode(encryptedMessage);
             byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
             String decryptedMessage = new String(decryptedBytes);
-            // System.out.println("Decrypted message: " + decryptedMessage);
             return decryptedMessage;
         } catch (Exception e) {
             throw new RuntimeException("Error decrypting message", e);
@@ -82,10 +89,12 @@ public class ClientHandler extends Thread {
 
     
     private void broadcastMessage(String message) {
-        for (ClientHandler client : Server.clients) {
-            // System.out.println(client.getPublicKey());
-            if (client != this) { // don't send the message to the sender
-                client.encryptMessage(message, client.getPublicKey());
+        List<ClientHandler> clientsCopy;
+        synchronized (Server.clients) {
+            clientsCopy = new ArrayList<>(Server.clients);
+        }
+        for (ClientHandler client : clientsCopy) {
+            if (client != this) {
                 client.writer.println(encryptMessage(message, client.getPublicKey()));
             }
         }

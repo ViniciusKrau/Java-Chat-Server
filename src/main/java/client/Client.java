@@ -5,6 +5,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.ConnectException;
 import java.net.Socket;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -28,6 +29,7 @@ public class Client {
     private static PrivateKey privateKey;
     private static PublicKey publicKey;
     private static KeyPairGenerator keyPairGenerator;
+    private static Socket socket;
 
     public static void main(String[] args) {
 
@@ -46,12 +48,28 @@ public class Client {
         // Get the public and private keys
         privateKey = keyPair.getPrivate();
         publicKey = keyPair.getPublic();
-    
 
+        boolean connected = false;
+        while (!connected) {
+            try {
+                socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
+                System.out.println("Connected to server.");
+                connected = true;
+            } catch (ConnectException e) {
+                System.out.println("Failed to connect to server. Retrying...");
+                try {
+                    // Wait for a while before retrying to avoid busy-waiting
+                    Thread.sleep(5000);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt(); // Preserve interrupt status
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.err.println("An IO error occurred while trying to connect to the server.");
+                break;
+            }
+        }
         try {
-            // Connect to the server
-            Socket socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
-            System.out.println("Connected to server.");
 
             BufferedReader read = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             PrintWriter write = new PrintWriter(socket.getOutputStream(), true);
@@ -89,12 +107,19 @@ public class Client {
             while ((message = consoleInput.readLine()) != null) {
                 write.println(encryptMessage(message));
             }
-
-            // Close the connection
-            socket.close();
+            
         } catch (Exception e) {
             e.printStackTrace();
+        }finally {
+            if (socket != null && !socket.isClosed()) {
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
+        
     }
 
     private static String encryptMessage(String message) {
