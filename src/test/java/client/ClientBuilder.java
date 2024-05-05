@@ -1,11 +1,7 @@
 package client;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 
 public class ClientBuilder {
@@ -19,9 +15,7 @@ public class ClientBuilder {
 
                 OutputStream stdin = process.getOutputStream();
                 PrintWriter writer = new PrintWriter(stdin);
-
-                // Write to the process's input stream
-                // Thread.sleep(300);
+                
                 writer.write("Process Number: " + i + "\n");
                 writer.flush();
 
@@ -29,5 +23,6 @@ public class ClientBuilder {
                 e.printStackTrace();
             }
         }
+        System.out.println("All processes started.");
     }
 }

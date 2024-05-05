@@ -16,18 +16,17 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class Server {
 
-    static CopyOnWriteArrayList<ClientHandler> clients = new CopyOnWriteArrayList<>();
+    static List<ClientHandler> clients = Collections.synchronizedList(new ArrayList<>());
     private static ServerSocket serverSocket;
     private static ThreadPoolExecutor executorService;
     static PrivateKey serverPrivateKey;
@@ -52,21 +51,6 @@ public class Server {
         // Get the public and private keys
         serverPrivateKey = keyPair.getPrivate();
         serverPublicKey = keyPair.getPublic();
-        
-
-        int corePoolSize = 10;
-        int maximumPoolSize = 20;
-        long keepAliveTime = 60L;
-        TimeUnit unit = TimeUnit.SECONDS;
-        BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<>(50); // queue with a capacity of 50
-
-        executorService = new ThreadPoolExecutor(
-                corePoolSize,
-                maximumPoolSize,
-                keepAliveTime,
-                unit,
-                workQueue
-        );
 
         try {
             // Create a server socket
@@ -85,7 +69,6 @@ public class Server {
                 X509EncodedKeySpec spec = new X509EncodedKeySpec(Base64.getDecoder().decode(publicKeyStringClient.getBytes()));
                 KeyFactory keyFactory = KeyFactory.getInstance("RSA");
                 PublicKey clientPublicKey = keyFactory.generatePublic(spec);
-                // System.out.println(clientPublicKey);
             
                 System.out.println("Sending server public key to client");
                 PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
@@ -94,7 +77,7 @@ public class Server {
                 // Create a new thread to handle the client
                 ClientHandler clientHandler = new ClientHandler(clientSocket, clientPublicKey);
                 clients.add(clientHandler);
-                executorService.execute(clientHandler);
+                new Thread(clientHandler).start();
             }
 
 

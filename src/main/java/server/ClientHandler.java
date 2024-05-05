@@ -63,7 +63,6 @@ public class ClientHandler extends Thread {
     }
 
     private String encryptMessage(String message, PublicKey publicKey) {
-        // System.out.println("Public key: " + publicKey.toString());
         try {
             Cipher cipher = Cipher.getInstance("RSA");
             cipher.init(Cipher.ENCRYPT_MODE, publicKey);
